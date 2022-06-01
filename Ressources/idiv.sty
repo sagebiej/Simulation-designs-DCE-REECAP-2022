@@ -1,0 +1,68 @@
+
+
+\usetheme{Boadilla}
+
+\usepackage{textpos}
+\usepackage{graphicx}
+\usepackage{textpos}
+\usepackage{natbib}
+\bibliographystyle{apalike}
+\setbeamertemplate{navigation symbols}{}
+
+\definecolor{idivblue}{RGB}{85,137,195}
+\definecolor{idivyellow}{RGB}{248,201,23}
+\definecolor{idivgreen}{RGB}{116,196,46}
+\definecolor{idivlblue}{RGB}{182,202,233}
+\definecolor{idivlyellow}{RGB}{255,237,171}
+\definecolor{idivlgreen}{RGB}{207,243,174}
+\definecolor{idivlgrey}{RGB}{242, 242, 242}
+\definecolor{idivgrey}{RGB}{75, 75, 75}	
+
+
+
+\setbeamercolor{block title}{fg=idivgrey,bg=idivlblue}
+\setbeamertemplate{section in toc}{\inserttocsectionnumber.~\inserttocsection}
+\setbeamercolor{section in left}{fg=black, bg=idivlyellow}
+\setbeamercolor{section in middle}{fg=black, bg=idivlgreen}
+\setbeamercolor{section in right}{fg=black, bg=idivlblue}
+
+\setbeamercolor{frametitle}{fg=idivgrey,bg=idivlgrey}
+\setbeamercolor{title}{fg=idivgrey}
+\setbeamercolor{section in toc}{fg=idivgrey}
+\setbeamercolor{date}{fg=idivgrey}
+\setbeamercolor{author}{fg=idivgrey}
+\setbeamercolor{institute}{fg=idivgrey}
+
+\setbeamertemplate{enumerate items}[default]
+
+\setbeamercolor{itemize item}{fg=idivblue}
+\setbeamercolor{itemize subitem}{fg=idivgrey}
+\setbeamercolor{itemize subsubitem}{fg=black}
+
+
+\setbeamertemplate{itemize item}[circle]
+\setbeamertemplate{itemize subitem}[triangle]
+\setbeamertemplate{itemize subsubitem}{--}
+
+\setbeamercolor*{enumerate item}{fg=idivblue}
+\setbeamercolor*{enumerate subitem}{fg=idivgrey}
+\setbeamercolor*{enumerate subsubitem}{fg=black}
+
+
+
+\setbeamertemplate{footline}
+{
+  \leavevmode%
+  \hbox{%
+  \begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,center]{section in left}%
+    \usebeamerfont{author in head/foot}\insertshortauthor~~\beamer@ifempty{}{}{(\insertshortinstitute)}
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,center]{section in middle}%
+    \usebeamerfont{title in head/foot} \insertshorttitle
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,right]{section in right}%
+    \usebeamerfont{date in head/foot}\insertshortdate{}\hspace*{2em}
+    \insertframenumber{} / \inserttotalframenumber\hspace*{2ex} 
+  \end{beamercolorbox}}%
+  \vskip0pt%
+}

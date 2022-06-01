@@ -1,0 +1,232 @@
+\documentclass[aspectratio=169]{beamer}
+
+\usepackage{Ressources/idiv}
+\makeatletter
+\makeatother
+
+
+\title[Simulation Experimental Design]{Workshop on Experimental Design and Simulation for choice experiments}
+\author[Sagebiel, Schulze]{Julian Sagebiel and Christoph Schulze}
+\date{\today}
+\institute{{\includegraphics[height=2cm,width=7cm]{Ressources/iDiv_Logo_long.png} } \vspace{1cm}}
+
+
+\begin{document}
+\begin{frame}
+\maketitle
+
+\end{frame}
+
+
+\addtobeamertemplate{frametitle}{}{%
+\begin{textblock*}{100mm}(0.8\textwidth,-0.85cm)
+\includegraphics[height=0.75cm,width=2.25cm]{Ressources/iDiv_Logo_short.png}
+\end{textblock*}}
+
+\begin{frame}{Content}
+\tableofcontents
+
+\end{frame}
+\section{Introduction}
+\begin{frame}{Experimental Designs}
+\begin{itemize}
+    \item In choice experiments, experimental designs are used to reduce the number of choice sets. 
+    \item In the empirical literature, most researchers use orthogonal arrays or efficient designs
+    \item Finding a good design is crucial for unbiased estimation of utility parameters.
+    \item Often difficult to judge if a design will perform well with real data.
+
+\end{itemize}
+
+
+\end{frame}
+ 
+ 
+\begin{frame}{What is not covered in this workshop}
+
+We will \underline{not} investigate
+\begin{itemize}
+    \item how to select attributes and levels
+    \item how discrete choice models work
+    \item how to generate an experimental design 
+    \item how a design is behavioral perceived by respondents
+
+\end{itemize}
+
+\end{frame} 
+   
+   
+\begin{frame}{Workshop schedule}
+
+
+\begin{itemize}
+    \item We will use three different experimental designs which were generated in the software NGENE
+    \item For each design, we will generate a synthetic dataset
+    \item We will use conditional logit models to estimate parameters for the syntheric datasets
+    \item We will repeat these steps several times to investigate design efficiency and unbiasedness
+
+\end{itemize}
+
+\end{frame}   
+   
+   
+\begin{frame}{What are simulations}
+
+
+\begin{itemize}
+    \item When estimating a statistical model, we assume a specific datagenerating process (GDP)
+    \item In a simulation, we mimic the DGP by using the assumptions of the model
+    \item Thereby we calculate the dependent variable based on the (made up) parameters, variables and an error term.
+    
+
+
+\end{itemize}
+
+\end{frame}     
+
+
+
+
+
+   
+\begin{frame}[fragile]{Example}
+\begin{block}{The assumed DGP}
+
+    $$ Y=\alpha+\beta*X+\epsilon $$
+
+\end{block}
+
+\begin{itemize}
+    \item $X$ can either be a random variable or a variable from an experimental design.
+    \item $\alpha$ and $\beta$ are  parameters that are unknown in real world data, but known in a simulation.
+    \item $\epsilon$ is a random disturbance, unknown in the real world, but generated and visible in the simulation.
+\end{itemize}
+    
+    
+ 
+    
+\end{frame}
+
+
+\begin{frame}[fragile]{Using R}
+\begin{block}{The assumed DGP}
+
+    $$ Y=\alpha+\beta*X+\epsilon $$
+
+\end{block}
+
+
+ <<>>=
+# Create a binary independent variable
+
+eps=rnorm(100)
+
+alpha=10
+beta= 2
+
+Sdata <- data.frame(X = rep(0:1,times=100)) 
+
+Sdata$Y=alpha+beta*Sdata$X+eps
+
+
+
+@   
+    
+\end{frame}
+
+\begin{frame}[fragile]{Columns in beamer}
+    \begin{columns}
+    \column{0.3\textwidth}
+        \centering
+        <<echo=FALSE, message=FALSE>>=
+
+library(kableExtra)
+library(texreg)
+kable(head(Sdata,10),digits=2)%>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+
+
+@
+ 
+    \column{0.7\textwidth}
+
+
+
+            <<echo=FALSE>>=
+
+t= texreg(lm(Y~X,data=Sdata), caption = "Linear Regression")
+
+
+@
+
+
+\Sexpr{t}
+
+
+
+    \end{columns}
+\end{frame}
+
+
+
+\begin{frame}{Bias}
+    
+ \begin{itemize}
+     \item The estimated parameters are close to the true parameters.
+     \item To assess bias we have to repeat the simulation several times. 
+     \item We call each simulation a \textit{run}.
+     \item The mean of the estimated parameters from all runs should be extremely close to the true parameters.
+     
+ \end{itemize}   
+     
+\end{frame}
+
+\begin{frame}{Efficiency}
+    
+ \begin{itemize}
+     \item To assess efficiency, we have to compare different designs.
+     \item In this case, there is just one possible design.
+     \item For choice experiments, we run the simulation for different designs and compare either the standard deviation of the estimated parameters or the mean of the standard errors.
+     \item The smaller the value is, the `more efficient` is the design.
+     
+ \end{itemize}   
+     
+\end{frame}
+
+
+\begin{frame}{Power}
+    
+ \begin{itemize}
+     \item Power: How often is an existing effect statistically significant. 
+     \item The researcher decides on the significance level.
+     \item Today we will simulate power 
+     \item Example: In 100 runs, how often is the p-value of $\beta$ smaller than 0.05.
+     
+ \end{itemize}   
+     
+\end{frame}
+
+
+\begin{frame}{Simulations in R}
+    
+ \begin{itemize}
+     \item In the following we will run simulations for different designs in R.
+     \item We first start with a didactically script, where we code the simulation step-by-step.
+     \item Later, we use functions and loops to make the code more efficient. 
+     \item The code is available on github.
+     
+ \end{itemize}   
+     
+\end{frame}
+
+\begin{frame}{}
+    This frame is an example of \texttt{thebibliography} environment using 
+in bibliography management. Two items are cited: \textit{The \LaTeX\ Companion} 
+book by \cite{gossens.1993} and the Einstein journal paper \citep{einstein.1905}. 
+\end{frame}
+
+\begin{frame}[allowframebreaks]
+        \frametitle{References}
+        \bibliography{lit.bib}
+\end{frame}
+\end{document}
+
