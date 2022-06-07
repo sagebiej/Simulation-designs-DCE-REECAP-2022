@@ -1,11 +1,37 @@
 \documentclass[aspectratio=169]{beamer}
 
+ \newcommand{\secpa}{
+
+
+\begin{frame}
+\vfill
+\begin{center}
+\Huge
+\insertsection{}
+\end{center}
+\end{frame}
+}
+
+
+\AtBeginSection[]
+{
+\secpa
+%   \begin{frame}
+ 
+%     \frametitle{Table of Contents}
+%     % \begin{multicols}{2}
+%     \tableofcontents[currentsection]
+%   % \end{multicols}
+%   \end{frame}
+}
+
+
 \usepackage{Ressources/idiv}
 \makeatletter
 \makeatother
 
 
-\title[Simulation Experimental Design]{Workshop on Experimental Design and Simulation for choice experiments}
+\title[Simulation Experimental Design]{Workshop on Simulation to test Experimental Designs for Choice Experiments}
 \author[Sagebiel, Schulze]{Julian Sagebiel and Christoph Schulze}
 \date{\today}
 \institute{{\includegraphics[height=2cm,width=7cm]{Ressources/iDiv_Logo_long.png} } \vspace{1cm}}
@@ -31,7 +57,7 @@
 \begin{frame}{Experimental Designs}
 \begin{itemize}
     \item In choice experiments, experimental designs are used to reduce the number of choice sets. 
-    \item In the empirical literature, most researchers use orthogonal arrays or efficient designs
+    \item In the empirical literature, most researchers use orthogonal arrays or efficient designs.
     \item Finding a good design is crucial for unbiased estimation of utility parameters.
     \item Often difficult to judge if a design will perform well with real data.
 
@@ -59,22 +85,22 @@ We will \underline{not} investigate
 
 
 \begin{itemize}
-    \item We will use three different experimental designs which were generated in the software NGENE
-    \item For each design, we will generate a synthetic dataset
-    \item We will use conditional logit models to estimate parameters for the syntheric datasets
-    \item We will repeat these steps several times to investigate design efficiency and unbiasedness
+    \item We will use four different experimental designs which were generated in the software NGENE.
+    \item For each design, we will generate a synthetic dataset.
+    \item We will use conditional logit models to estimate parameters for the synthetic datasets.
+    \item We will repeat these steps several times to investigate design efficiency, unbiasedness and power.
 
 \end{itemize}
 
 \end{frame}   
    
-   
+ \section{Simulations}  
 \begin{frame}{What are simulations}
 
 
 \begin{itemize}
-    \item When estimating a statistical model, we assume a specific datagenerating process (GDP)
-    \item In a simulation, we mimic the DGP by using the assumptions of the model
+    \item When estimating a statistical model, we assume a specific data generating process (GDP).
+    \item In a simulation, we mimic the DGP by using the assumptions of the model.
     \item Thereby we calculate the dependent variable based on the (made up) parameters, variables and an error term.
     
 
@@ -116,16 +142,15 @@ We will \underline{not} investigate
 
 
  <<>>=
-# Create a binary independent variable
 
-eps=rnorm(100)
+eps=rnorm(200) #error
 
-alpha=10
-beta= 2
+alpha=10 #constant
+beta= 2  #effect of X
 
-Sdata <- data.frame(X = rep(0:1,times=100)) 
+Sdata <- data.frame(X = rep(0:1,times=100))  # X as in experiment
 
-Sdata$Y=alpha+beta*Sdata$X+eps
+Sdata$Y=alpha+beta*Sdata$X+eps # outcome variable
 
 
 
@@ -133,7 +158,7 @@ Sdata$Y=alpha+beta*Sdata$X+eps
     
 \end{frame}
 
-\begin{frame}[fragile]{Columns in beamer}
+\begin{frame}[fragile]{Regression}
     \begin{columns}
     \column{0.3\textwidth}
         \centering
@@ -198,19 +223,20 @@ t= texreg(lm(Y~X,data=Sdata), caption = "Linear Regression")
  \begin{itemize}
      \item Power: How often is an existing effect statistically significant. 
      \item The researcher decides on the significance level.
-     \item Today we will simulate power 
+     \item Today, we will simulate (not calculate) power.
      \item Example: In 100 runs, how often is the p-value of $\beta$ smaller than 0.05.
      
  \end{itemize}   
      
 \end{frame}
 
+\section{Workshop Schedule}
 
 \begin{frame}{Simulations in R}
     
  \begin{itemize}
-     \item In the following we will run simulations for different designs in R.
-     \item We first start with a didactically script, where we code the simulation step-by-step.
+     \item In the following, we will run simulations for different designs in R.
+     \item We first start with a didactic script, where we code the simulation step-by-step.
      \item Later, we use functions and loops to make the code more efficient. 
      \item The code is available on github.
      
@@ -218,15 +244,34 @@ t= texreg(lm(Y~X,data=Sdata), caption = "Linear Regression")
      
 \end{frame}
 
-\begin{frame}{}
-    This frame is an example of \texttt{thebibliography} environment using 
-in bibliography management. Two items are cited: \textit{The \LaTeX\ Companion} 
-book by \cite{gossens.1993} and the Einstein journal paper \citep{einstein.1905}. 
+\begin{frame}{Context of example data}
+    \begin{itemize}
+        \item Farmer choice experiment of choice of agri-environmental contracts \pause
+        \item Four attributes:
+        \begin{itemize}
+            \item Criterion of payment (dummy): results \underline{or} practice based payments \pause
+             \item Advisory services (dummy) \pause
+            \item Involvement of intermediary (dummy) \pause
+            \item Payment: 350 - 830 Euro/ha/year (steps of 60 Euro)
+        \end{itemize}
+        \item[] $\rightarrow$ 2 $\times$ 2 $\times$ 2 $\times$ 9 = 72
+    \end{itemize}
+    \center
+    \includegraphics[width=.8\textwidth]{Ressources/choice_agora.PNG}
 \end{frame}
 
-\begin{frame}[allowframebreaks]
-        \frametitle{References}
-        \bibliography{lit.bib}
+\begin{frame}{Study designs}
+    \begin{itemize}
+        \item Orthogonal design
+        \item Efficient design
+        \item Efficient design (with very bad priors)
+        \item Bayesian efficient design
+    \end{itemize}
 \end{frame}
+
+% \begin{frame}[allowframebreaks]
+%         \frametitle{References}
+%         \bibliography{lit.bib}
+% \end{frame}
 \end{document}
 
