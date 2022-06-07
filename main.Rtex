@@ -239,6 +239,7 @@ t= texreg(lm(Y~X,data=Sdata), caption = "Linear Regression")
      \item We first start with a didactic script, where we code the simulation step-by-step.
      \item Later, we use functions and loops to make the code more efficient. 
      \item The code is available on github.
+     \item \url{https://github.com/sagebiej/Simulation-designs-DCE-REECAP-2022/}
      
  \end{itemize}   
      
