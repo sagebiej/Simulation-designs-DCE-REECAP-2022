@@ -1,0 +1,255 @@
+---
+title: "Simulation Basic Model"
+output: html_notebook
+---
+
+
+# Preamble
+
+First we read in packages, set the seed and clear output
+
+```{r}
+rm(list=ls())
+
+library("readr")
+library("psych")
+library("dplyr")          
+library("evd")           
+library("apollo")
+library("tidyr")
+library("kableExtra")
+library("tidylog")
+
+set.seed(4849)
+```
+
+
+
+
+# Reading in a design and prepare for simulation
+
+We use a design generated in NGENE. The design is in wide format, which we will need to estimate models in apollo. However, designs may come in other formats and if you use other packages (e.g. `gmnl`), you would need to reshape to long.
+
+
+```{r}
+
+designfile = "Designs/befficientdesign.ngd"
+
+design <- read_delim(designfile,delim = "\t", escape_double = FALSE, trim_ws = TRUE  , col_select = c(-Design, -starts_with("...")) ,  name_repair = "universal") %>%   filter(!is.na(Choice.situation)) #read in design from NGENE
+
+kable(design) %>% kable_styling()
+
+```
+
+The design consists of 18 choice sets, separated into two blocks. There are two alternatives and an opt out option. The opt out option is not part of the design, so we do not see it. Each alternative contains 4 attributes of which `.d` is the payment vehicle. The other three attributes are binary.
+
+# Setting up parameters for simulation
+
+In this step we define the coefficients (betas) for the utility function and define other parameters such as number of simulated responses. 
+
+The betas can be made up by us and varied as desired. However, note that higher beta values mean lower error variance and thus more significant values. For example, if you use beta values in the range of 100 to 200, you will get significant results already with 10 respondents.
+
+
+```{r}
+basc = -1.2
+basc2 = -1.4
+baction = 0.1
+badvisory = 0.4 
+bpartner = 0.3
+bcomp = 0.02   #compensation payment
+
+```
+
+Next, we define some meta parameters for the simulation. These can also be modified
+
+```{r}
+
+replications <-50    # number of respondents in the simulation. You can increase this number later on and see how the standard errors go down
+
+nsets<-nrow(design)        
+nblocks<-max(design$Block)
+setpp <- nsets/nblocks      # Choice Sets per respondent; in this 'no blocks' design everyone sees all 24 sets
+respondents <- replications*nblocks
+```
+
+## Generate dataset
+
+We will now generate a dataset based on the parameters above. We will duplicate the design according to the number of replications, create a variable identifying the the respondents (for panel data analysis), and create deterministic utility.
+
+Utility for alternative 1 is defined as
+
+$$ V_1 = b_{asc} + b_{action}*alt1.b + b_{advisory} * alt1.c + b_{partner} * alt1.d + b_{comp} * alt1.p $$
+and for alternative 2
+
+$$ V_2 = b_{asc2} + b_{action}*alt2.b + b_{advisory} * alt2.c + b_{partner} * alt2.d + b_{comp} * alt2.p $$
+The Utility of the opt out is set to zero
+
+$$ V_{optout} = 0  $$
+
+
+```{r}
+
+database<- design %>%
+  arrange(Block,Choice.situation) %>% 
+  slice(rep(row_number(), replications)) %>%    ## replicate design according to number of replications
+  mutate(RID = rep(1:respondents, each=setpp)) %>%  # create Respondent ID.
+  relocate(RID,`Choice.situation`) %>% 
+  mutate(
+    V.1 = basc + baction*alt1.b + badvisory * alt1.c + bpartner * alt1.d + bcomp * alt1.p , #Utility of alternative 1
+    V.2 = basc2 + baction*alt2.b + badvisory * alt2.c + bpartner * alt2.d + bcomp * alt2.p ,  #Utility of alternative 2
+    V.3 = 0 ) %>% # utility of opt out, normalized to zero
+  as.data.frame()
+
+```
+
+# Simulate choices
+
+So far, we have created a dataset with deterministic utility. In the Random Utility model, we assume that, besides the deterministic part $V$, utility $U$ has an unobserved part as well. For the logit model, we assume an additive error term $\epsilon$ which is iid Gumbel distributed.
+
+$$U = V+ \epsilon$$
+
+We can take draws from the Gumbel distribution using the function `rgumbel``
+
+```{r}
+database <-  database %>% 
+    group_by(RID) %>% 
+    mutate(
+      e.1 = rgumbel(setpp,loc=0, scale=1) ,
+      e.2 = rgumbel(setpp,loc=0, scale=1) ,
+      e.3 = rgumbel(setpp,loc=0, scale=1) ,
+      U.1 = V.1 + e.1 ,
+      U.2 = V.2 + e.2 ,
+      U.3 = V.3 + e.3 
+    )   %>% 
+    as.data.frame()
+  
+  database$choice <- max.col(database[,c("U.1" , "U.2" , "U.3" )])
+```
+
+
+We have now a dataset that looks like a real world dataset. Yet, some variables are unknown.
+
+```{r}
+
+kable(head(database, 9)) %>% kable_styling()
+
+```
+
+We can inspect if the simulation is correct
+
+```{r}
+
+summary(database[,c("e.1","e.2","e.3")])
+
+```
+
+```{r}
+summary(database[,c("V.1","V.2","V.3")])
+```
+
+```{r}
+summary(database[,c("U.1","U.2","U.3")])
+```
+
+Finally, we can delete those variables that are not visible in a real world dataset
+
+```{r}
+database <- database %>% 
+  select(-c(matches("\\.[1-3]$")))
+```
+
+# Estimate a conditional logit model
+
+
+Having generated the dataset, we can now estimate a model. Here we use apollo to estimate a conditional logit model.
+
+
+```{r}
+apollo_initialise()
+  
+  modelOutput_settings = list(printPVal=T)
+  
+  ### Set core controls
+  apollo_control = list(
+    modelName  ="Simulated Data",
+    modelDescr ="Simple MNL model",
+    indivID    ="RID"
+  )
+  
+  
+  apollo_beta=c(b_asc = 0,
+                b_asc2 =0,
+                b_action = 0,
+                b_advisory = 0,      
+                b_partner = 0,    
+                b_comp = 0 )
+  
+  ### keine Parameter fix halten
+  apollo_fixed = c()
+  
+  ### validieren
+  apollo_inputs = apollo_validateInputs()
+  
+  apollo_probabilities=function(apollo_beta, apollo_inputs, functionality="estimate"){
+    
+    ### Function initialisation: do not change the following three commands
+    ### Attach inputs and detach after function exit
+    apollo_attach(apollo_beta, apollo_inputs)
+    on.exit(apollo_detach(apollo_beta, apollo_inputs))
+    
+    ### Create list of probabilities P
+    P = list()
+    
+    ### List of utilities (later integrated in mnl_settings below)
+    V = list()
+    V[['alt1']] = b_asc + b_action*alt1.b + b_advisory * alt1.c + b_partner * alt1.d + b_comp * alt1.p
+    V[['alt2']] = b_asc2 + b_action*alt2.b + b_advisory * alt2.c + b_partner * alt2.d + b_comp * alt2.p  
+    V[['alt3']] = 0
+    
+    ### Define settings for MNL model component
+    mnl_settings = list(
+      alternatives  = c(alt1=1, alt2=2, alt3=3) ,
+      avail         = 1, # all alternatives are available in every choice
+      choiceVar     = choice,
+      V             = V  # tell function to use list vector defined above
+      
+    )
+    
+    ### Compute probabilities using MNL model
+    P[['model']] = apollo_mnl(mnl_settings, functionality)
+    
+    ### Take product across observation for same individual
+    P = apollo_panelProd(P, apollo_inputs, functionality)
+    
+    ### Average across inter-individual draws - nur bei Mixed Logit!
+    ### P = apollo_avgInterDraws(P, apollo_inputs, functionality)
+    
+    ### Prepare and return outputs of function
+    P = apollo_prepareProb(P, apollo_inputs, functionality)
+    return(P)
+  }
+  
+  model1 = apollo_estimate(apollo_beta, apollo_fixed,
+                                  apollo_probabilities, apollo_inputs, 
+                                  estimate_settings=list(hessianRoutine="maxLik"))
+  
+```
+
+And look at the model.
+Remember the true parameters are:
+
+basc = -1.2
+basc2 = -1.4
+baction = 0.1
+badvisory = 0.4 
+bpartner = 0.3
+bcomp = 0.02
+
+
+```{r}
+kable(apollo_modelOutput(model1, modelOutput_settings = list(printPVal=T)), digits = 3) %>% kable_styling()
+```
+
+We can now play around with the parameters from above and see how that affects the results. For example, change the betas, samples size, delete specific choice sets in the design etc.
+
+Although we have already some insights into the design, we cannot assess bias and efficiency. We also cannot simulate power. To do so, we need to simulate several datasets and assess the means and variances of the estimated parameters. We will do this in the next script.
